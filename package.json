@@ -1,0 +1,18 @@
+{
+  "name": "misspiggybot",
+  "version": "1.0.0",
+  "description": "discord music bot",
+  "type": "module",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "author": "Armin Herling",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.11.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.45.0"
+  }
+}
