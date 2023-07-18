@@ -2,7 +2,6 @@
   "name": "misspiggybot",
   "version": "1.0.0",
   "description": "discord music bot",
-  "type": "module",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
@@ -14,5 +13,9 @@
   },
   "devDependencies": {
     "eslint": "^8.45.0"
-  }
+  },
+  "imports": {
+    "#commands/*": "./commands/*"
+  },
+  "type": "module"
 }
