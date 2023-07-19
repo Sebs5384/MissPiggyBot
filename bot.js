@@ -1,23 +1,51 @@
 import fs from 'node:fs'
-import { ActivityType, Client, Collection, Events, GatewayIntentBits, REST, Routes } from 'discord.js'
-import config from './config.json' assert {type: 'json'};
+import { ActivityType, Client, Collection, Events, GatewayIntentBits, Partials, REST, Routes } from 'discord.js'
+import { DisTube } from 'distube'
+import { SpotifyPlugin } from '@distube/spotify'
+import { SoundCloudPlugin } from '@distube/soundcloud'
+import { YtDlpPlugin } from '@distube/yt-dlp'
+import config from './config.json' assert {type: 'json'}
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] })
+const client = new Client({
+    partials: [
+        Partials.Channel, // for text channel
+        Partials.GuildMember, // for guild member
+        Partials.User, // for discord user
+    ],
+    intents: [
+        GatewayIntentBits.Guilds, // for guild related things
+        GatewayIntentBits.GuildMembers, // for guild members related things
+        GatewayIntentBits.GuildIntegrations, // for discord Integrations
+        GatewayIntentBits.GuildVoiceStates, // for voice related things
+        GatewayIntentBits.GuildMessages
+    ]
+})
 client.config = config
-client.commands = new Collection()
 
+client.player = new DisTube(client, {
+    leaveOnStop: false,
+    leaveOnFinish: false,
+    emitNewSongOnly: true,
+    plugins: [
+        new SpotifyPlugin(),
+        new SoundCloudPlugin(),
+        new YtDlpPlugin()
+    ]
+})
+
+client.commands = new Collection()
 const commandsPath = './commands'
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
 for (const file of commandFiles)
 {
     const { command } = await import(`#commands/${file}`);
-    if ('name' in command && 'run' in command)
+    if ('name' in command && 'slashRun' in command)
     {
         client.commands.set(command.name, command)
     }
     else
     {
-        console.log(`[WARNING] The command ${file} in ${commandsPath} is missing a required "name" or "run" property.`)
+        console.log(`[WARNING] The command ${file} in ${commandsPath} is missing a required "name" or "slashRun" property.`)
     }
 }
 
@@ -36,7 +64,7 @@ client.on(Events.InteractionCreate, async interaction =>
 
     try 
     {
-        await command.run(client, interaction)
+        await command.slashRun(client, interaction)
     }
     catch (e)
     {
