@@ -1,8 +1,10 @@
 import { SlashCommandBuilder } from 'discord.js'
 
 export const command = new SlashCommandBuilder()
-    .setName('stop')
-    .setDescription('Stops the current song and deletes the playlist')
+    .setName('skip')
+    .setDescription('Skips the current song')
+
+command.aliases = ['s']
 
 command.slashRun = async function slashRun(client, interaction)
 {
@@ -29,12 +31,13 @@ async function run(client, channel, member, send)
     const botVcId = client.player.voices.get(guildId)?.channelId
 
     if (vcId !== botVcId)
-        return send("You can't stop music if you aren't even in the voice channel.")
+        return send("You can't skip music if you aren't even in the voice channel.")
 
     const queue = client.player.getQueue(guildId)
     if (!queue || !queue.playing)
         return send('No music is currently playing.')
 
-    queue.stop()
-    send('Music stopped.')
+    let old = queue.songs[0];
+    const success = await queue.skip();
+    send(success ? `Skipped: **${old.name}**` : "Something went wrong.")
 }
