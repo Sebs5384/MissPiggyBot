@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js'
 
 export const command = new SlashCommandBuilder()
     .setName('pause')
@@ -31,9 +31,10 @@ async function run(client, channel, member, send)
     if (vcId !== botVcId)
         return send("You can't pause music if you aren't even in the voice channel.")
 
-    const queue = client.player.getQueue(guildId);
+    const queue = client.player.getQueue(guildId)
     if (!queue || !queue.playing)
         return send('No music is currently playing.')
 
-    queue.pause();
+    queue.pause()
+    send('Music paused.')
 }

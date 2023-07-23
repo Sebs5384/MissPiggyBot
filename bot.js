@@ -40,7 +40,7 @@ const commandsPath = './commands'
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
 for (const file of commandFiles)
 {
-    const { command } = await import(`#commands/${file}`);
+    const { command } = await import(`#commands/${file}`)
     if ('name' in command)
     {
         const isSlashCommand = 'slashRun' in command
@@ -70,10 +70,18 @@ for (const file of commandFiles)
     }
 }
 
+const distubeEventsPath = './distube'
+const distubeEventFiles = fs.readdirSync(distubeEventsPath).filter(file => file.endsWith('.js'))
+for (const file of distubeEventFiles)
+{
+    const { event, callback } = await import(`#distube/${file}`)
+    client.player.on(event, callback.bind(null, client))
+}
+
 client.on(Events.MessageCreate, async message =>
 {
     if (message.author.bot || !message.guild || !message.id)
-        return;
+        return
 
     const mentionedUser = message.mentions.users.first()
     const botWasMentioned = message.content.startsWith(`<@${mentionedUser?.id}>`)
@@ -90,7 +98,7 @@ client.on(Events.MessageCreate, async message =>
         contentWithoutPrefix = message.content.substring(`<@${mentionedUser.id}>`.length)
 
     const tokens = contentWithoutPrefix.trim().split(' ')
-    const commandName = tokens.shift();
+    const commandName = tokens.shift()
 
     let command = client.commandAliases.get(commandName)
     if(!command)
@@ -142,7 +150,7 @@ client.once(Events.ClientReady, c =>
     {
         try 
         {
-            const rest = new REST().setToken(client.config.token);
+            const rest = new REST().setToken(client.config.token)
             console.log(`Started refreshing application slash commands.`)
             await rest.put(Routes.applicationCommands(client.user.id), {
                 body: await client.commands,

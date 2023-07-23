@@ -22,7 +22,8 @@
     "eslint": "^8.45.0"
   },
   "imports": {
-    "#commands/*": "./commands/*"
+    "#commands/*": "./commands/*",
+    "#distube/*": "./distube/*"
   },
   "type": "module"
 }

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js'
 
 export const command = new SlashCommandBuilder()
     .setName('resume')
@@ -33,9 +33,10 @@ async function run(client, channel, member, send)
     if (vcId !== botVcId)
         return send("You can't resume music if you aren't even in the voice channel.")
 
-    const queue = client.player.getQueue(guildId);
+    const queue = client.player.getQueue(guildId)
     if (!queue || queue.playing)
         return send('The current song is not paused.')
 
-    queue.resume();
+    queue.resume()
+    send('Music resumed.')
 }
