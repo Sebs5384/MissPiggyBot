@@ -16,7 +16,7 @@ command.slashRun = async function slashRun(client, interaction)
 {
     const nameValue = interaction.options.getString('name')
     if (!nameValue)
-        return interaction.followUp({ content: "You forgot to add the name or link to a song or playlist" })
+        return interaction.followUp('You forgot to add the name or link to a song or playlist')
 
     const channel = interaction.channel
     const member = interaction.member
@@ -42,10 +42,10 @@ async function run(client, channel, member, send, songNameOrUrl)
     const vc = member.voice.channel
     if (!vc)
     {
-        return send({ content: "You need to be in a voice channel!" })
+        return send('You need to be in a voice channel!')
     }
 
-    await send({ content: "Trying to load music... 🎧" })
+    await send('Trying to load music... 🎧')
 
     try
     {
@@ -61,6 +61,6 @@ async function run(client, channel, member, send, songNameOrUrl)
     }
     catch (e)
     {
-        await channel.send({ content: "Sorry, no results found!" })
+        await channel.send('Sorry, no results found!')
     }
 }
