@@ -23,6 +23,7 @@
   },
   "imports": {
     "#commands/*": "./commands/*",
+    "#discord/*": "./discord/*",
     "#distube/*": "./distube/*"
   },
   "type": "module"

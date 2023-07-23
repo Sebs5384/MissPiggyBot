@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import { ActivityType, Client, Collection, Events, GatewayIntentBits, Partials, REST, Routes } from 'discord.js'
+import { Client, Collection, Events, GatewayIntentBits, Partials } from 'discord.js'
 import { DisTube } from 'distube'
 import { SpotifyPlugin } from '@distube/spotify'
 import { SoundCloudPlugin } from '@distube/soundcloud'
@@ -70,6 +70,14 @@ for (const file of commandFiles)
     }
 }
 
+const discordEventsPath = './discord'
+const discordEventFiles = fs.readdirSync(discordEventsPath).filter(file => file.endsWith('.js'))
+for (const file of discordEventFiles)
+{
+    const { event, callback } = await import(`#discord/${file}`)
+    client.on(event, callback.bind(null, client))
+}
+
 const distubeEventsPath = './distube'
 const distubeEventFiles = fs.readdirSync(distubeEventsPath).filter(file => file.endsWith('.js'))
 for (const file of distubeEventFiles)
@@ -77,94 +85,5 @@ for (const file of distubeEventFiles)
     const { event, callback } = await import(`#distube/${file}`)
     client.player.on(event, callback.bind(null, client))
 }
-
-client.on(Events.MessageCreate, async message =>
-{
-    if (message.author.bot || !message.guild || !message.id)
-        return
-
-    const mentionedUser = message.mentions.users.first()
-    const botWasMentioned = message.content.startsWith(`<@${mentionedUser?.id}>`)
-    const prefix = client.config.prefix
-    const hasPrefix = message.content.startsWith(prefix)
-
-    if (!(botWasMentioned || hasPrefix))
-        return
-
-    let contentWithoutPrefix = undefined
-    if (hasPrefix)
-        contentWithoutPrefix = message.content.substring(prefix.length)
-    else if (botWasMentioned)
-        contentWithoutPrefix = message.content.substring(`<@${mentionedUser.id}>`.length)
-
-    const tokens = contentWithoutPrefix.trim().split(' ')
-    const commandName = tokens.shift()
-
-    let command = client.commandAliases.get(commandName)
-    if(!command)
-        command = client.commands.get(commandName)
-
-    if (!command || !('prefixRun' in command))
-    {
-        console.error(`No command matching ${commandName} was found.`)
-        return
-    }
-
-    try 
-    {
-        await command.prefixRun(client, message, tokens.join(' '))
-    }
-    catch (e)
-    {
-        console.error(e)
-    }
-})
-
-client.on(Events.InteractionCreate, async interaction =>
-{
-    if (!interaction.isChatInputCommand())
-        return
-
-    const command = client.commands.get(interaction.commandName)
-    if (!command || !('slashRun' in command))
-    {
-        console.error(`No command matching ${interaction.commandName} was found.`)
-        return
-    }
-
-    try 
-    {
-        await interaction.deferReply()
-        await command.slashRun(client, interaction)
-    }
-    catch (e)
-    {
-        console.error(e)
-    }
-})
-
-client.once(Events.ClientReady, c =>
-{
-    // Register slash commands
-    (async () =>
-    {
-        try 
-        {
-            const rest = new REST().setToken(client.config.token)
-            console.log(`Started refreshing application slash commands.`)
-            await rest.put(Routes.applicationCommands(client.user.id), {
-                body: await client.commands,
-            })
-            console.log(`Successfully reloaded ${client.commands.size} application [/] commands.`)
-        }
-        catch (err) 
-        {
-            console.log("Error reloading application [/] commands: " + err)
-        }
-    })()
-
-    console.log(`Ready! Logged in as ${c.user.tag}`)
-    client.user.setActivity({ name: '🎶', type: ActivityType.Listening })
-})
 
 client.login(client.config.token)
