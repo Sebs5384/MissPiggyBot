@@ -10,21 +10,43 @@ export const command = new SlashCommandBuilder()
             .setRequired(true)
     )
 
+command.aliases = ['p']
+
 command.slashRun = async function slashRun(client, interaction)
 {
     const nameValue = interaction.options.getString('name')
     if (!nameValue)
-        return interaction.reply({ content: "You forgot to add the name or link to a song or playlist" })
+        return interaction.followUp({ content: "You forgot to add the name or link to a song or playlist" })
 
-    let channel = interaction.channel
-    let member = interaction.member
+    const channel = interaction.channel
+    const member = interaction.member
+    const send = interaction.followUp.bind(interaction)
 
-    await run(client, channel, member, nameValue)
+    await run(client, channel, member, send, nameValue)
 }
 
-async function run(client, channel, member, songNameOrUrl)
+command.prefixRun = async function prefixRun(client, message, parameters)
+{
+    if (parameters.length == 0)
+        return message.channel.send('You forgot to add the name or link to a song or playlist')
+
+    const channel = message.channel
+    const member = message.member
+    const send = channel.send.bind(channel)
+
+    await run(client, channel, member, send, parameters)
+}
+
+async function run(client, channel, member, send, songNameOrUrl)
 {
     const vc = member.voice.channel
+    if (!vc)
+    {
+        return send({ content: "You need to be in a voice channel!" })
+    }
+
+    await send({ content: "Trying to load music... 🎧" })
+
     try
     {
         await client.player.play(vc, songNameOrUrl, {
@@ -32,9 +54,13 @@ async function run(client, channel, member, songNameOrUrl)
             textChannel: channel,
             songNameOrUrl
         })
+
+        let queue = client.player.getQueue(channel.guildId)
+        if (!queue.autoplay)
+            queue.toggleAutoplay()
     }
     catch (e)
     {
-        await channel.send({ content: "No results found!" })
+        await channel.send({ content: "Sorry, no results found!" })
     }
 }

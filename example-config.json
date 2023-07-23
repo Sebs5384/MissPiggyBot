@@ -1,4 +1,5 @@
 {
 	"token": "your-token-goes-here",
-	"embedColor": "your-embed-color-here"
+	"embedColor": "your-embed-color-here",
+	"prefix": "your-prefix"
 }
