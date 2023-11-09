@@ -9,7 +9,7 @@ command.aliases = ['l', 'lyric']
 command.slashRun = async function slashRun(client, interaction)
 {
     const channel = interaction.channel
-    const send = interaction.followUp.bind(interaction)
+    const send = channel.send.bind(channel)
 
     await run(client, channel, send)
 }
