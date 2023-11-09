@@ -7,8 +7,7 @@ export const callback = async function callback(client, message)
     if (message.author.bot || !message.guild || !message.id)
         return
 
-    const mentionedUser = message.mentions.users.first()
-    const botWasMentioned = message.content.startsWith(`<@${mentionedUser?.id}>`)
+    const botWasMentioned = message.mentions.has(client.user)
     const prefix = client.config.prefix
     const hasPrefix = message.content.startsWith(prefix)
 
@@ -19,7 +18,7 @@ export const callback = async function callback(client, message)
     if (hasPrefix)
         contentWithoutPrefix = message.content.substring(prefix.length)
     else if (botWasMentioned)
-        contentWithoutPrefix = message.content.substring(`<@${mentionedUser.id}>`.length)
+        contentWithoutPrefix = message.content.substring(`<@${client.user.id}>`.length)
 
     const tokens = contentWithoutPrefix.trim().split(' ')
     const commandName = tokens.shift()
