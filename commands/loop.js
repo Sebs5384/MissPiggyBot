@@ -5,7 +5,7 @@ export const command = new SlashCommandBuilder()
     .setDescription('Loops the current song or playlist')
     .addBooleanOption((option) =>
         option
-            .setName('all')
+            .setName('one')
             .setDescription('Whether to one song or the whole playlist!')
             .setRequired(true)
     )
