@@ -3,21 +3,25 @@ import { SlashCommandBuilder } from 'discord.js'
 export const command = new SlashCommandBuilder()
     .setName('loop')
     .setDescription('Loops the current song or playlist')
-    .addBooleanOption((option) =>
+    .addStringOption((option) =>
         option
-            .setName('one')
+            .setName('choice')
             .setDescription('Whether to one song or the whole playlist!')
             .setRequired(true)
-    )
+            .addChoices(
+				{ name: 'Song', value: 'song' },
+				{ name: 'Playlist', value: 'playlist' },
+				{ name: 'Stop', value: 'stop' },
+			))
 
 command.slashRun = async function slashRun(client, interaction)
 {
     const channel = interaction.channel
     const member = interaction.member
     const send = interaction.followUp.bind(interaction)
-    const loopOne = interaction.options.getBoolean('one')
+    const choice = interaction.options.getString('choice')
 
-    await run(client, channel, member, send, loopOne)
+    await run(client, channel, member, send, choice)
 }
 
 command.prefixRun = async function prefixRun(client, message, parameters)
@@ -25,12 +29,11 @@ command.prefixRun = async function prefixRun(client, message, parameters)
     const channel = message.channel
     const member = message.member
     const send = channel.send.bind(channel)
-    const loopAll = parameters == "all"
 
-    await run(client, channel, member, send, !loopAll)
+    await run(client, channel, member, send, parameters)
 }
 
-async function run(client, channel, member, send, loopOne)
+async function run(client, channel, member, send, choice)
 {
     const vcId = member.voice.channel?.id
     const guildId = channel.guild.id
@@ -42,24 +45,24 @@ async function run(client, channel, member, send, loopOne)
     const queue = client.player.getQueue(guildId)
     if (!queue || !queue.playing)
         return send('No music is currently playing.')
-
-    const currentMode = queue.repeatMode
-    if(currentMode !== 0)
+    
+    if (choice == 'stop')
     {
         queue.setRepeatMode(0)
         return send('Looping disabled.')
     }
-    else
+    else if(choice == 'song')
     {
-        if(loopOne)
-        {
-            queue.setRepeatMode(1)
-            return send('Looping the current song.')
-        }
-        else
-        {
-            queue.setRepeatMode(2)
-            return send('Looping the whole playlist.')
-        }
+        queue.setRepeatMode(1)
+        return send('Looping the current song.')
+    }
+    else if (choice == 'playlist')
+    {
+        queue.setRepeatMode(2)
+        return send('Looping the whole playlist.')
+    }
+    else 
+    {
+        return send(`'${choice}' is not a valid option.`)
     }
 }
