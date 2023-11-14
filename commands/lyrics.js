@@ -1,4 +1,6 @@
-import { SlashCommandBuilder } from 'discord.js'
+import { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } from 'discord.js'
+import Genius from 'genius-lyrics'
+import config from '../config.json' assert {type: 'json'}
 
 export const command = new SlashCommandBuilder()
     .setName('lyrics')
@@ -20,20 +22,66 @@ command.prefixRun = async function prefixRun(client, message, parameters)
 {
     const channel = message.channel
     const send = channel.send.bind(channel)
+    const lyricsToken = config.lyricsToken
+
+    await run(client, channel, send, lyricsToken)
+}
+
+async function getSongList(token, song)
+{   
+    const geniusClient = new Genius.Client(token)
+    const songList = await geniusClient.songs.search("Monument a day to remember")
     
-    await channel.send('Lets ask Kermit!')
+    if(songList.length == 0)
+    {
+        return 'No songs found'
+    } else 
+    {
+        songList.map((song) => {
+            console.log(song.fullTitle)
+        })
 
-    await run(client, channel, send)
+        return songList[0]
+    }
+
 }
 
-async function run(client, channel, send)
+async function getLyrics(song)
 {
-    const guildId = channel.guild.id
+    const lyrics = song.lyrics();
 
-    const queue = client.player.getQueue(guildId)
-    if (!queue || !queue.playing)
-        return send('Oh wait, there is no music playing.')
-
-    let song = queue.songs[0];
-    send(`k.g www.genius.com lyrics ${song.name}`)
+    if(!lyrics)
+    {
+        return 'No lyrics found'
+    } else
+    {
+        return lyrics
+    } 
 }
+
+async function run(client, channel, send, lyricsToken)
+{
+    
+
+    const songList = await getSongList(lyricsToken)
+    const lyrics = await getLyrics(songList)
+
+    const embed = createLyricsEmbed(client, lyrics, songList)
+    
+    await send({ embeds: [embed] })
+
+}
+
+function createLyricsEmbed(client, lyrics, song)
+{
+
+    return new EmbedBuilder()
+        .setTitle(song.fullTitle)
+        .setURL(song.url)
+        .setThumbnail(song.thumbnail)   
+        .setAuthor({ name: 'Kermit', iconURL: 'https://cdn.discordapp.com/emojis/1008301553006685450.png' })
+        .setDescription(lyrics)
+        .setColor(client.config.embedColor)
+}
+
+
