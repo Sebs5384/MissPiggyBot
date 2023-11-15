@@ -27,46 +27,20 @@ command.prefixRun = async function prefixRun(client, message, parameters)
     await run(client, channel, send, lyricsToken)
 }
 
-async function getSongList(token, song)
-{   
-    const geniusClient = new Genius.Client(token)
-    const songList = await geniusClient.songs.search("Monument a day to remember")
-    
-    if(songList.length == 0)
-    {
-        return 'No songs found'
-    } else 
-    {
-        songList.map((song) => {
-            console.log(song.fullTitle)
-        })
-
-        return songList[0]
-    }
-
-}
-
-async function getLyrics(song)
-{
-    const lyrics = song.lyrics();
-
-    if(!lyrics)
-    {
-        return 'No lyrics found'
-    } else
-    {
-        return lyrics
-    } 
-}
-
 async function run(client, channel, send, lyricsToken)
 {
-    
+    const guildId = channel.guild.id
+    const queue = client.player.getQueue(guildId)
+    if(!queue || !queue.playing)
+    {
+        return send('No music is currently playing.')
+    }
 
-    const songList = await getSongList(lyricsToken)
+    const currentSong = queue.songs[0]
+    const songList = await getSong(lyricsToken, currentSong)
     const lyrics = await getLyrics(songList)
 
-    const embed = createLyricsEmbed(client, lyrics, songList)
+    const embed = createLyricsEmbed(client, lyrics, songList[0])
     
     await send({ embeds: [embed] })
 
@@ -84,4 +58,34 @@ function createLyricsEmbed(client, lyrics, song)
         .setColor(client.config.embedColor)
 }
 
+async function getSong(token, currentSong)
+{   
 
+    const geniusClient = new Genius.Client(token)
+    const song = await geniusClient.songs.search(currentSong.name)
+    
+    if(song.length == 0)
+    {
+        send('No song found')
+    } else 
+    {
+        return song
+    }
+
+}
+
+async function getLyrics(song)
+{
+    console.log(song[0].title)
+    const currentSong = song[0] 
+    const lyrics = await currentSong.lyrics();
+    const songName = song.fullTitle
+
+    if(!lyrics)
+    {
+        return `No lyrics found for ${songName}`
+    } else
+    {
+        return lyrics
+    } 
+}
