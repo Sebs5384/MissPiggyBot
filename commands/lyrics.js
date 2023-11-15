@@ -38,54 +38,55 @@ async function run(client, channel, send, lyricsToken)
 
     const currentSong = queue.songs[0]
     const songList = await getSong(lyricsToken, currentSong)
-    const lyrics = await getLyrics(songList)
+    const lyrics = await getLyrics(songList, send)
 
     const embed = createLyricsEmbed(client, lyrics, songList[0])
     
-    await send({ embeds: [embed] })
+    embed ? await send({ embeds: [embed] })
 
 }
 
 function createLyricsEmbed(client, lyrics, song)
 {
-
-    return new EmbedBuilder()
+    if(song === undefined)
+    {   
+        return console.log('No song found')
+    } 
+    else 
+    {
+        return new EmbedBuilder()
         .setTitle(song.fullTitle)
         .setURL(song.url)
         .setThumbnail(song.thumbnail)   
-        .setAuthor({ name: 'Kermit', iconURL: 'https://cdn.discordapp.com/emojis/1008301553006685450.png' })
         .setDescription(lyrics)
         .setColor(client.config.embedColor)
+        .setFooter({ text: 'Click on the title to get full information about this song'})
+    }
+
+ 
 }
 
 async function getSong(token, currentSong)
 {   
-
+    const currentSongName = currentSong.name
     const geniusClient = new Genius.Client(token)
-    const song = await geniusClient.songs.search(currentSong.name)
-    
-    if(song.length == 0)
-    {
-        send('No song found')
-    } else 
-    {
-        return song
-    }
+    const song = await geniusClient.songs.search(currentSongName)
 
+    return song
 }
 
-async function getLyrics(song)
+async function getLyrics(song, send)
 {
-    console.log(song[0].title)
     const currentSong = song[0] 
-    const lyrics = await currentSong.lyrics();
+    
+    if(currentSong === undefined) return send('No lyrics found for this song')
+    
+    const currentSongLyrics = await currentSong.lyrics();
     const songName = song.fullTitle
 
-    if(!lyrics)
-    {
-        return `No lyrics found for ${songName}`
-    } else
-    {
-        return lyrics
-    } 
+    if(song.fullTitle === undefined){
+
+    } return send(`No lyrics found for ${song.fullTitle}`) 
+
+    return currentSongLyrics
 }
