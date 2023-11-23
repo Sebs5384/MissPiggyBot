@@ -1,5 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js'
 
+export const userSongs = []
+
 export const command = new SlashCommandBuilder()
     .setName('play')
     .setDescription('Plays a song with a link or name')
@@ -15,6 +17,7 @@ command.aliases = ['p']
 command.slashRun = async function slashRun(client, interaction)
 {
     const nameValue = interaction.options.getString('name')
+    
     if (!nameValue)
         return interaction.followUp('You forgot to add the name or link to a song or playlist')
 
@@ -49,6 +52,8 @@ async function run(client, channel, member, send, songNameOrUrl)
 
     try
     {
+        userSongs.push(songNameOrUrl)
+        
         await client.player.play(vc, songNameOrUrl, {
             member: member,
             textChannel: channel,
