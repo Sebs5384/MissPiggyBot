@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } from 'discord.js'
+import { userSongs } from '../commands/play.js'
 import Genius from 'genius-lyrics'
-import config from '../config.json' assert {type: 'json'}
 
 export const command = new SlashCommandBuilder()
     .setName('lyrics')
@@ -8,85 +8,93 @@ export const command = new SlashCommandBuilder()
 
 command.aliases = ['.l', '.lyric']
 
-command.slashRun = async function slashRun(client, interaction)
-{
+command.slashRun = async function slashRun(client, interaction) {
     await interaction.followUp({ content: 'Lets ask Kermit!', ephemeral: true });
 
     const channel = interaction.channel
     const send = channel.send.bind(channel)
+    const queue = client.player.getQueue(guildId)
 
     await run(client, channel, send)
 }
 
-command.prefixRun = async function prefixRun(client, message, parameters)
-{
+command.prefixRun = async function prefixRun(client, message) {
     const channel = message.channel
     const send = channel.send.bind(channel)
-    const lyricsToken = config.lyricsToken
+    const lyricsToken = client.lyricsToken
+    const geniusClient = new Genius.Client(lyricsToken)
 
-    await run(client, channel, send, lyricsToken)
+    await run(client, channel, send, geniusClient)
 }
 
-async function run(client, channel, send, lyricsToken)
-{
+async function run(client, channel, send, geniusClient) {
+    
     const guildId = channel.guild.id
     const queue = client.player.getQueue(guildId)
-    if(!queue || !queue.playing)
-    {
-        return send('No music is currently playing.')
+
+    if (!queue || !queue.playing) return send('No music is currently playing.')
+
+
+    const songList = await getSongList(geniusClient, userSongs, channel, queue)
+    const songLyrics = await getLyrics(songList, send)
+    const embed = createLyricsEmbed(client, songLyrics, songList)
+
+    await send({ embeds: [embed] })
+
+}
+
+async function getSongList(lyrics, songs, channel, queue) {
+
+    const userSongName = songs[0]
+    const currentQueueSongName = queue.songs[0].name
+    const similaritiesRate = compareSongsName(userSongName, currentQueueSongName)
+    const similaritiesThreshold = 0.1
+
+    if( similaritiesRate >= similaritiesThreshold) {
+        const songList = await lyrics.songs.search(userSongName)
+
+        return songList.length === 0 ? await lyrics.songs.search(currentQueueSongName) : songList
+    } else {
+        const songList =  await lyrics.songs.search(currentQueueSongName)
+        
+        return songList
     }
 
-    const currentSong = queue.songs[0]
-    const songList = await getSong(lyricsToken, currentSong)
-    const lyrics = await getLyrics(songList, send)
-
-    const embed = createLyricsEmbed(client, lyrics, songList[0])
-    
-    embed ? await send({ embeds: [embed] })
-
 }
 
-function createLyricsEmbed(client, lyrics, song)
-{
-    if(song === undefined)
-    {   
-        return console.log('No song found')
-    } 
-    else 
-    {
-        return new EmbedBuilder()
-        .setTitle(song.fullTitle)
-        .setURL(song.url)
-        .setThumbnail(song.thumbnail)   
-        .setDescription(lyrics)
-        .setColor(client.config.embedColor)
-        .setFooter({ text: 'Click on the title to get full information about this song'})
-    }
+async function getLyrics(songList, send) {
+    const firstSong = songList[0]
 
- 
-}
+    if (firstSong === undefined) return send('No lyrics found for this song')
 
-async function getSong(token, currentSong)
-{   
-    const currentSongName = currentSong.name
-    const geniusClient = new Genius.Client(token)
-    const song = await geniusClient.songs.search(currentSongName)
+    const currentSongLyrics = await firstSong.lyrics();
 
-    return song
-}
-
-async function getLyrics(song, send)
-{
-    const currentSong = song[0] 
-    
-    if(currentSong === undefined) return send('No lyrics found for this song')
-    
-    const currentSongLyrics = await currentSong.lyrics();
-    const songName = song.fullTitle
-
-    if(song.fullTitle === undefined){
-
-    } return send(`No lyrics found for ${song.fullTitle}`) 
 
     return currentSongLyrics
+}
+
+function createLyricsEmbed(client, lyrics, songList) {
+
+    const firstSong = songList[0]
+    if (firstSong === undefined) {
+        return console.log('No song found')
+    }
+    else {
+        return new EmbedBuilder()
+            .setTitle(firstSong.fullTitle)
+            .setURL(firstSong.url)
+            .setThumbnail(firstSong.thumbnail)
+            .setDescription(lyrics)
+            .setColor(client.config.embedColor)
+            .setFooter({ text: 'Click on the title to get full information about this song' })
+    }
+}
+
+function compareSongsName(userSongName, queueSongName){
+    const userSong = userSongName.split(' ')
+    const queueSong = queueSongName.split(' ')
+    const intersection = userSong.filter(songName => queueSong.includes(songName))
+    const similaritiesValue = intersection.length / Math.max(userSong.length, queueSong.length)
+
+    return similaritiesValue
 }
