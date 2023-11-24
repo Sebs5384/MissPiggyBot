@@ -9,11 +9,8 @@ export const command = new SlashCommandBuilder()
 command.aliases = ['.l', '.lyric']
 
 command.slashRun = async function slashRun(client, interaction) {
-    await interaction.followUp({ content: 'Lets ask Kermit!', ephemeral: true });
-
     const channel = interaction.channel
     const send = channel.send.bind(channel)
-    const queue = client.player.getQueue(guildId)
 
     await run(client, channel, send)
 }
@@ -21,14 +18,14 @@ command.slashRun = async function slashRun(client, interaction) {
 command.prefixRun = async function prefixRun(client, message) {
     const channel = message.channel
     const send = channel.send.bind(channel)
-    const lyricsToken = client.lyricsToken
-    const geniusClient = new Genius.Client(lyricsToken)
 
-    await run(client, channel, send, geniusClient)
+    await run(client, channel, send)
 }
 
-async function run(client, channel, send, geniusClient) {
-    
+async function run(client, channel, send) {
+
+    const lyricsToken = client.lyricsToken
+    const geniusClient = new Genius.Client(lyricsToken)
     const guildId = channel.guild.id
     const queue = client.player.getQueue(guildId)
 

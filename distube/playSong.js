@@ -1,5 +1,5 @@
 import { Events } from 'distube'
-import { userSongs } from '../commands/play'
+import { userSongs } from '../commands/play.js'
 
 
 export const event = Events.PLAY_SONG
