@@ -27,17 +27,22 @@ async function run(client, channel, send) {
     const lyricsToken = client.lyricsToken
     const geniusClient = new Genius.Client(lyricsToken)
     const guildId = channel.guild.id
-    const queue = client.player.getQueue(guildId)
+    const queue =  client.player.getQueue(guildId)
 
     if (!queue || !queue.playing) return send('No music is currently playing.')
 
-
+    let currentPage = 0
     const songList = await getSongList(geniusClient, userSongs, channel, queue)
-    const songLyrics = await getLyrics(songList, send)
-    const lyricEmbed = await createLyricsEmbed(client, songLyrics, songList)
-    const lyricButtons = await createLyricsButtons(client, songList, 0)
+    const songLyrics = await getLyrics(songList, send, currentPage)
+    const lyricEmbed = await createLyricsEmbed(client, songLyrics, songList, currentPage)
+    const lyricButtons = await createLyricsButtons(client, songList, currentPage)
 
     await send({ embeds: [lyricEmbed], components: [lyricButtons] })
+
+
+}
+
+async function handlePagination(client, channel, send, songList, currentPage){
 
 }
 
@@ -45,47 +50,30 @@ async function getSongList(lyrics, songs, channel, queue) {
 
     const userSongName = songs[0]
     const currentQueueSongName = queue.songs[0].name
-    const similaritiesRate = compareSongsName(userSongName, currentQueueSongName)
+    const similaritiesRate = await compareSongsName(userSongName, currentQueueSongName)
     const similaritiesThreshold = 0.1
 
     if( similaritiesRate >= similaritiesThreshold) {
-        const songList = await lyrics.songs.search(userSongName)
+        const userSongList = await lyrics.songs.search(userSongName)
+        const queueSongList = await lyrics.songs.search(currentQueueSongName)
 
-        return songList.length === 0 ? await lyrics.songs.search(currentQueueSongName) : songList
+        return userSongList.length === 0 ? queueSongList : userSongList
     } else {
-        const songList =  await lyrics.songs.search(currentQueueSongName)
+        const queueSongList =  await lyrics.songs.search(currentQueueSongName)
         
-        return songList
+        return queueSongList
     }
 
 }
 
-async function getLyrics(songList, send) {
-    const firstSong = songList[0]
+async function getLyrics(songList, send, currentPage) {
 
+    const firstSong = songList[currentPage]
     if (firstSong === undefined) return send('No lyrics found for this song')
 
     const currentSongLyrics = await firstSong.lyrics();
 
-
     return currentSongLyrics
-}
-
-async function createLyricsEmbed(client, lyrics, songList) {
-
-    const firstSong = songList[0]
-    if (firstSong === undefined) {
-        return console.log('No song found')
-    }
-    else {
-        return new EmbedBuilder()
-            .setTitle(firstSong.fullTitle)
-            .setURL(firstSong.url)
-            .setThumbnail(firstSong.thumbnail)
-            .setDescription(lyrics)
-            .setColor(client.config.embedColor)
-            .setFooter({ text: 'Click on the title to get full information about this song' })
-    }
 }
 
 async function compareSongsName(userSongName, queueSongName){
@@ -97,10 +85,30 @@ async function compareSongsName(userSongName, queueSongName){
     return similaritiesValue
 }
 
+async function createLyricsEmbed(client, lyrics, songList, currentPage) {
+
+    const currentPageLyrics = songList[currentPage]
+    
+    if (currentPageLyrics === undefined) {
+        return console.log('No song found')
+    }
+    else {
+        return new EmbedBuilder()
+            .setTitle(currentPageLyrics.fullTitle)
+            .setURL(currentPageLyrics.url)
+            .setThumbnail(currentPageLyrics.thumbnail)
+            .setDescription(lyrics)
+            .setColor(client.config.embedColor)
+            .setFooter(
+            { text: ` 
+                \n Click on the title to get full information about this song \nFound  ${currentPage + 1}/${songList.length} results for ${currentPageLyrics.title}` 
+            })
+    }
+}
+
 async function createLyricsButtons(client, songList, currentPage){
 
     const currentSong = songList[currentPage]
-
     if(currentSong === undefined) return
 
     const backButton =  new ButtonBuilder({
@@ -119,3 +127,4 @@ async function createLyricsButtons(client, songList, currentPage){
 
     return new ActionRowBuilder({ components: [backButton, forwardButton] })
 }
+
