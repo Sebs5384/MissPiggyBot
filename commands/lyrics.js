@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } from 'discord.js'
+import { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js'
 import { userSongs } from '../commands/play.js'
 import Genius from 'genius-lyrics'
 
@@ -34,9 +34,10 @@ async function run(client, channel, send) {
 
     const songList = await getSongList(geniusClient, userSongs, channel, queue)
     const songLyrics = await getLyrics(songList, send)
-    const embed = createLyricsEmbed(client, songLyrics, songList)
+    const lyricEmbed = await createLyricsEmbed(client, songLyrics, songList)
+    const lyricButtons = await createLyricsButtons(client, songList, 0)
 
-    await send({ embeds: [embed] })
+    await send({ embeds: [lyricEmbed], components: [lyricButtons] })
 
 }
 
@@ -70,7 +71,7 @@ async function getLyrics(songList, send) {
     return currentSongLyrics
 }
 
-function createLyricsEmbed(client, lyrics, songList) {
+async function createLyricsEmbed(client, lyrics, songList) {
 
     const firstSong = songList[0]
     if (firstSong === undefined) {
@@ -87,11 +88,34 @@ function createLyricsEmbed(client, lyrics, songList) {
     }
 }
 
-function compareSongsName(userSongName, queueSongName){
+async function compareSongsName(userSongName, queueSongName){
     const userSong = userSongName.split(' ')
     const queueSong = queueSongName.split(' ')
     const intersection = userSong.filter(songName => queueSong.includes(songName))
     const similaritiesValue = intersection.length / Math.max(userSong.length, queueSong.length)
 
     return similaritiesValue
+}
+
+async function createLyricsButtons(client, songList, currentPage){
+
+    const currentSong = songList[currentPage]
+
+    if(currentSong === undefined) return
+
+    const backButton =  new ButtonBuilder({
+        style: ButtonStyle.Secondary,
+        emoji: '◀',
+        customId: 'back',
+        disabled: currentPage === 0
+    })
+
+    const forwardButton =  new ButtonBuilder({
+        style: ButtonStyle.Secondary,
+        emoji: '▶',
+        customId: 'forward',
+        disabled: currentPage === songList.length
+    })
+
+    return new ActionRowBuilder({ components: [backButton, forwardButton] })
 }
