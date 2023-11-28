@@ -109,8 +109,6 @@ async function createLyricsEmbed(client, lyrics, songList, currentPage) {
     const currentPageLyrics = songList[currentPage]
     const MAX_DISCORD_MESSAGE_LENGTH = 4096
 
-    console.log(lyrics.length)
-
     if (lyrics.length >= MAX_DISCORD_MESSAGE_LENGTH) 
     {
         return new EmbedBuilder()
