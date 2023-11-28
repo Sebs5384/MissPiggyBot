@@ -83,9 +83,11 @@ async function compareSongsName(userSongName, queueSongName){
 }
 
 async function handlePagination(client, message, member, songList, send, currentPage){
+    
     const commandAuthorFilter = i => i.user.id === member.id
-
-    const collector = message.createMessageComponentCollector({ commandAuthorFilter, time: 300000 })
+    const COLLECTOR_TIMEOUT = 300000 // 5 minutes
+    const collector = message.createMessageComponentCollector({ commandAuthorFilter, time: COLLECTOR_TIMEOUT })
+    
     collector.on('collect', async (button) => {
         
         if(button.customId === 'back'){
@@ -112,15 +114,15 @@ async function createLyricsEmbed(client, lyrics, songList, currentPage) {
     if (lyrics.length >= MAX_DISCORD_MESSAGE_LENGTH) 
     {
         return new EmbedBuilder()
-        .setTitle(` ${currentPageLyrics.fullTitle}`)
-        .setThumbnail(currentPageLyrics.thumbnail)
-        .setDescription(`
-            Ooops, it seems that the lyrics for this song are too long
-            You can click in link below to see the full lyrics of this song 
-            \n [Take me there !](${currentPageLyrics.url})`
-        )
-        .setColor('#ED4245')
-        .setFooter({ text: `Found  ${currentPage + 1}/${songList.length} results for ${currentPageLyrics.title}` })
+            .setTitle(` ${currentPageLyrics.fullTitle}`)
+            .setThumbnail(currentPageLyrics.thumbnail)
+            .setDescription(`
+                Ooops, it seems that the lyrics for this song are too long
+                You can click in link below to see the full lyrics of this song 
+                \n [Take me there !](${currentPageLyrics.url})`
+            )
+            .setColor('#ED4245')
+            .setFooter({ text: `Found  ${currentPage + 1}/${songList.length} results for ${currentPageLyrics.title}` })
     }
     else 
     {
