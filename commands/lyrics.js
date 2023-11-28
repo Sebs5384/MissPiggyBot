@@ -11,12 +11,14 @@ command.aliases = ['.l', '.lyric']
 command.slashRun = async function slashRun(client, interaction) {
     const channel = interaction.channel
     const send = channel.send.bind(channel)
+    const member = interaction.member
 
     await run(client, channel, send)
 }
 
 command.prefixRun = async function prefixRun(client, message) {
     const channel = message.channel
+    const member = message.member
     const send = channel.send.bind(channel)
 
     await run(client, channel, send)
