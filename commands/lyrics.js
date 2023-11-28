@@ -107,11 +107,25 @@ async function handlePagination(client, message, member, songList, send, current
 async function createLyricsEmbed(client, lyrics, songList, currentPage) {
 
     const currentPageLyrics = songList[currentPage]
-    
-    if (currentPageLyrics === undefined) {
-        return console.log('No song found')
+    const MAX_DISCORD_MESSAGE_LENGTH = 4096
+
+    console.log(lyrics.length)
+
+    if (lyrics.length >= MAX_DISCORD_MESSAGE_LENGTH) 
+    {
+        return new EmbedBuilder()
+        .setTitle(` ${currentPageLyrics.fullTitle}`)
+        .setThumbnail(currentPageLyrics.thumbnail)
+        .setDescription(`
+            Ooops, it seems that the lyrics for this song are too long
+            You can click in link below to see the full lyrics of this song 
+            \n [Take me there !](${currentPageLyrics.url})`
+        )
+        .setColor('#ED4245')
+        .setFooter({ text: `Found  ${currentPage + 1}/${songList.length} results for ${currentPageLyrics.title}` })
     }
-    else {
+    else 
+    {
         return new EmbedBuilder()
             .setTitle(currentPageLyrics.fullTitle)
             .setURL(currentPageLyrics.url)
