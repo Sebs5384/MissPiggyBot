@@ -13,7 +13,7 @@ command.slashRun = async function slashRun(client, interaction) {
     const send = channel.send.bind(channel)
     const member = interaction.member
 
-    await run(client, channel, send)
+    await run(client, channel, send, member)
 }
 
 command.prefixRun = async function prefixRun(client, message) {
@@ -21,10 +21,10 @@ command.prefixRun = async function prefixRun(client, message) {
     const member = message.member
     const send = channel.send.bind(channel)
 
-    await run(client, channel, send)
+    await run(client, channel, send, member)
 }
 
-async function run(client, channel, send) {
+async function run(client, channel, send, member) {
 
     const lyricsToken = client.lyricsToken
     const geniusClient = new Genius.Client(lyricsToken)
@@ -38,14 +38,9 @@ async function run(client, channel, send) {
     const songLyrics = await getLyrics(songList, send, currentPage)
     const lyricEmbed = await createLyricsEmbed(client, songLyrics, songList, currentPage)
     const lyricButtons = await createLyricsButtons(client, songList, currentPage)
-
-    await send({ embeds: [lyricEmbed], components: [lyricButtons] })
-
-
-}
-
-async function handlePagination(client, channel, send, songList, currentPage){
-
+    const message = await send({ embeds: [lyricEmbed], components: [lyricButtons] })
+    
+    handlePagination(client, message, member, songList, send, currentPage)
 }
 
 async function getSongList(lyrics, songs, channel, queue) {
@@ -87,6 +82,28 @@ async function compareSongsName(userSongName, queueSongName){
     return similaritiesValue
 }
 
+async function handlePagination(client, message, member, songList, send, currentPage){
+    const commandAuthorFilter = i => i.user.id === member.id
+
+    const collector = message.createMessageComponentCollector({ commandAuthorFilter, time: 300000 })
+    collector.on('collect', async (button) => {
+        
+        if(button.customId === 'back'){
+            currentPage--
+        } 
+        else if(button.customId === 'forward'){
+            currentPage++
+        }
+
+        const songLyrics = await getLyrics(songList, send, currentPage)
+        const lyricEmbed = await createLyricsEmbed(client, songLyrics, songList, currentPage)
+        const lyricButtons = await createLyricsButtons(client, songList, currentPage)
+
+        message.edit({ embeds: [lyricEmbed], components: [lyricButtons] })
+        await button.deferUpdate()
+    })
+}   
+
 async function createLyricsEmbed(client, lyrics, songList, currentPage) {
 
     const currentPageLyrics = songList[currentPage]
@@ -111,20 +128,23 @@ async function createLyricsEmbed(client, lyrics, songList, currentPage) {
 async function createLyricsButtons(client, songList, currentPage){
 
     const currentSong = songList[currentPage]
+    const firstPage = 0
+    const lastPage = songList.length - 1
+
     if(currentSong === undefined) return
 
     const backButton =  new ButtonBuilder({
         style: ButtonStyle.Secondary,
         emoji: '◀',
         customId: 'back',
-        disabled: currentPage === 0
+        disabled: currentPage === firstPage
     })
 
     const forwardButton =  new ButtonBuilder({
         style: ButtonStyle.Secondary,
         emoji: '▶',
         customId: 'forward',
-        disabled: currentPage === songList.length
+        disabled: currentPage === lastPage
     })
 
     return new ActionRowBuilder({ components: [backButton, forwardButton] })
