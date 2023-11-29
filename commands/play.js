@@ -1,5 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js'
 
+const userSongs = []
+
 export const command = new SlashCommandBuilder()
     .setName('play')
     .setDescription('Plays a song with a link or name')
@@ -15,6 +17,7 @@ command.aliases = ['p']
 command.slashRun = async function slashRun(client, interaction)
 {
     const nameValue = interaction.options.getString('name')
+    
     if (!nameValue)
         return interaction.followUp('You forgot to add the name or link to a song or playlist')
 
@@ -39,6 +42,7 @@ command.prefixRun = async function prefixRun(client, message, parameters)
 
 async function run(client, channel, member, send, songNameOrUrl)
 {
+    
     const vc = member.voice.channel
     if (!vc)
     {
@@ -48,14 +52,17 @@ async function run(client, channel, member, send, songNameOrUrl)
     await send('Trying to load music... 🎧')
 
     try
-    {
+    {   
         await client.player.play(vc, songNameOrUrl, {
             member: member,
             textChannel: channel,
             songNameOrUrl
         })
 
+        userSongs.push(songNameOrUrl)
         let queue = client.player.getQueue(channel.guildId)
+        queue.userSongs = userSongs
+
         if (!queue.autoplay)
             queue.toggleAutoplay()
     }
