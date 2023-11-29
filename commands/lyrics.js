@@ -1,5 +1,4 @@
 import { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js'
-import { userSongs } from '../commands/play.js'
 import Genius from 'genius-lyrics'
 
 export const command = new SlashCommandBuilder()
@@ -26,15 +25,15 @@ command.prefixRun = async function prefixRun(client, message) {
 
 async function run(client, channel, send, member) {
 
-    const lyricsToken = client.lyricsToken
-    const geniusClient = new Genius.Client(lyricsToken)
+    client.genius = new Genius.Client()
     const guildId = channel.guild.id
     const queue =  client.player.getQueue(guildId)
+    const userSongs = queue.userSongs
 
     if (!queue || !queue.playing) return send('No music is currently playing.')
 
     let currentPage = 0
-    const songList = await getSongList(geniusClient, userSongs, channel, queue)
+    const songList = await getSongList(client.genius, userSongs, channel, queue)
     const songLyrics = await getLyrics(songList, send, currentPage)
     const lyricEmbed = await createLyricsEmbed(client, songLyrics, songList, currentPage)
     const lyricButtons = await createLyricsButtons(client, songList, currentPage)
