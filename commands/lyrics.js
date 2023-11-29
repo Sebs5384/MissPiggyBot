@@ -5,7 +5,7 @@ export const command = new SlashCommandBuilder()
     .setName('lyrics')
     .setDescription('Asks Kermit to google for lyrics')
 
-command.aliases = ['.l', '.lyric']
+command.aliases = ['l', 'lyric']
 
 command.slashRun = async function slashRun(client, interaction) {
     const channel = interaction.channel
